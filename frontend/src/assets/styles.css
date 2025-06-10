@@ -1,0 +1,89 @@
+/* Global styles and responsive design */
+
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f9f9f9;
+  color: #333;
+}
+
+a {
+  color: #007bff;
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+button {
+  background-color: #007bff;
+  border: none;
+  color: white;
+  padding: 8px 16px;
+  cursor: pointer;
+  border-radius: 4px;
+  font-size: 1rem;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+input, textarea, select {
+  padding: 8px;
+  font-size: 1rem;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+label {
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.post-feed, .user-profile, .notifications, .chat-container, .search-page {
+  max-width: 800px;
+  margin: 20px auto;
+  padding: 0 10px;
+  background-color: white;
+  border-radius: 8px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+}
+
+.post {
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin-bottom: 15px;
+  border-radius: 6px;
+}
+
+.create-post-button {
+  display: inline-block;
+  margin-bottom: 15px;
+  padding: 10px 20px;
+  background-color: #28a745;
+  color: white;
+  border-radius: 6px;
+  font-weight: 600;
+}
+
+.create-post-button:hover {
+  background-color: #218838;
+}
+
+/* Responsive layout */
+@media (max-width: 600px) {
+  .post-feed, .user-profile, .notifications, .chat-container, .search-page {
+    margin: 10px;
+    padding: 10px;
+  }
+
+  button, input, textarea, select {
+    font-size: 0.9rem;
+  }
+}

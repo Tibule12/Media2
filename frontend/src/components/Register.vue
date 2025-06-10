@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Register</h2>
-    <form @submit.prevent="register">
+<form @submit.prevent="registerUser">
       <div>
         <label>Username:</label>
         <input v-model="username" required />
@@ -18,6 +18,7 @@
 
 <script>
 import axios from 'axios'
+import { mapActions } from 'vuex'
 
 export default {
   data() {
@@ -28,13 +29,17 @@ export default {
     }
   },
   methods: {
-    async register() {
+    ...mapActions(['login']),
+    async registerUser() {
+      this.error = null
       try {
         await axios.post('/api/auth/register/', {
           username: this.username,
           password: this.password,
         })
-        this.$router.push('/login')
+        // Automatically login after registration
+        await this.login({ username: this.username, password: this.password })
+        this.$router.push('/')
       } catch (err) {
         this.error = 'Registration failed. Please try again.'
       }

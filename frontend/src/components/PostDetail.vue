@@ -4,6 +4,18 @@
     <div v-if="post">
       <h3>{{ post.author.username }}</h3>
       <p>{{ post.content }}</p>
+
+      <div v-if="post.media && post.media.length">
+        <h4>Media</h4>
+        <div v-for="mediaItem in post.media" :key="mediaItem.id" class="media-item">
+          <img v-if="mediaItem.type.startsWith('image/')" :src="mediaItem.url" alt="Post media" style="max-width: 100%; max-height: 400px;" />
+          <video v-else-if="mediaItem.type.startsWith('video/')" controls style="max-width: 100%; max-height: 400px;">
+            <source :src="mediaItem.url" :type="mediaItem.type" />
+            Your browser does not support the video tag.
+          </video>
+        </div>
+      </div>
+
       <p>Likes: {{ post.likes.length }}</p>
       <button @click="toggleLike">{{ liked ? 'Unlike' : 'Like' }}</button>
 

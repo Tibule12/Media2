@@ -1,7 +1,7 @@
 <template>
   <div>
     <h2>Login</h2>
-    <form @submit.prevent="login">
+<form @submit.prevent="loginUser">
       <div>
         <label>Username:</label>
         <input v-model="username" required />
@@ -18,6 +18,7 @@
 
 <script>
 import axios from 'axios'
+import { mapActions } from 'vuex'
 
 export default {
   data() {
@@ -28,13 +29,11 @@ export default {
     }
   },
   methods: {
-    async login() {
+    ...mapActions(['login']),
+    async loginUser() {
+      this.error = null
       try {
-        // For simplicity, using session authentication
-        await axios.post('/api/auth/login/', {
-          username: this.username,
-          password: this.password,
-        })
+        await this.login({ username: this.username, password: this.password })
         this.$router.push('/')
       } catch (err) {
         this.error = 'Login failed. Please check your credentials.'

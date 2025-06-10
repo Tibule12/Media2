@@ -9,10 +9,11 @@ class UserSerializer(serializers.ModelSerializer):
 
 class CommentSerializer(serializers.ModelSerializer):
     author = UserSerializer(read_only=True)
+    post = serializers.PrimaryKeyRelatedField(queryset=Post.objects.all())
 
     class Meta:
         model = Comment
-        fields = ['id', 'author', 'content', 'created_at']
+        fields = ['id', 'post', 'author', 'content', 'created_at']
 
 class LikeSerializer(serializers.ModelSerializer):
     user = UserSerializer(read_only=True)

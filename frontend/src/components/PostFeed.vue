@@ -1,10 +1,23 @@
 <template>
-  <div>
+  <div class="post-feed">
     <h2>Posts</h2>
-    <router-link to="/create">Create New Post</router-link>
-    <div v-if="posts.length === 0">No posts yet.</div>
+    <router-link to="/create" class="create-post-button">Create New Post</router-link>
+
+    <div class="filters">
+      <label for="sort">Sort by:</label>
+      <select id="sort" v-model="sortOrder" @change="fetchPosts">
+        <option value="newest">Newest</option>
+        <option value="oldest">Oldest</option>
+        <option value="most_liked">Most Liked</option>
+      </select>
+
+      <label for="filter">Filter by author:</label>
+      <input id="filter" v-model="authorFilter" @input="fetchPosts" placeholder="Author username" />
+    </div>
+
+    <div v-if="posts.length === 0" class="no-posts">No posts yet.</div>
     <div v-for="post in posts" :key="post.id" class="post">
-      <router-link :to="'/post/' + post.id">
+      <router-link :to="'/post/' + post.id" class="post-link">
         <h3>{{ post.author.username }}</h3>
         <p>{{ post.content }}</p>
       </router-link>
@@ -20,16 +33,38 @@ export default {
   data() {
     return {
       posts: [],
+      sortOrder: 'newest',
+      authorFilter: '',
+      fetchTimeout: null,
+    }
+  },
+  watch: {
+    sortOrder() {
+      this.fetchPosts()
+    },
+    authorFilter() {
+      if (this.fetchTimeout) clearTimeout(this.fetchTimeout)
+      this.fetchTimeout = setTimeout(() => {
+        this.fetchPosts()
+      }, 300)
     }
   },
   async created() {
-    try {
-      const response = await axios.get('/api/posts/')
-      this.posts = response.data
-    } catch (error) {
-      console.error('Failed to load posts', error)
-    }
+    await this.fetchPosts()
   },
+  methods: {
+    async fetchPosts() {
+      try {
+        const params = {}
+        if (this.sortOrder) params.sort = this.sortOrder
+        if (this.authorFilter) params.author = this.authorFilter
+        const response = await axios.get('/api/posts/', { params })
+        this.posts = response.data
+      } catch (error) {
+        console.error('Failed to load posts', error)
+      }
+    }
+  }
 }
 </script>
 
