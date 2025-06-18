@@ -20,6 +20,15 @@
       <router-link :to="'/post/' + post.id" class="post-link">
         <h3>{{ post.author.username }}</h3>
         <p>{{ post.content }}</p>
+        <div class="media-container">
+          <template v-for="media in post.media" :key="media.id">
+            <img v-if="media.media_type === 'image'" :src="media.file" alt="Post image" class="post-image" />
+            <video v-else-if="media.media_type === 'video'" controls class="post-video">
+              <source :src="media.file" type="video/mp4" />
+              Your browser does not support the video tag.
+            </video>
+          </template>
+        </div>
       </router-link>
       <p>Likes: {{ post.likes.length }}</p>
     </div>

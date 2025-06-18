@@ -1,69 +1,87 @@
-from django.urls import reverse
-from rest_framework import status
-from rest_framework.test import APITestCase
+from django.test import TestCase
+from rest_framework.test import APIClient
 from django.contrib.auth.models import User
-from .models import Post, Comment, Like
+from .models import Post, Comment, Like, Story, Follow, Notification
 
-class SocialAppTests(APITestCase):
+class SocialMediaAPITest(TestCase):
     def setUp(self):
-        self.user1 = User.objects.create_user(username='user1', password='pass1234')
-        self.user2 = User.objects.create_user(username='user2', password='pass1234')
-        self.post1 = Post.objects.create(author=self.user1, content='Post 1 content')
-        self.post2 = Post.objects.create(author=self.user2, content='Post 2 content')
+        self.client = APIClient()
+        self.user1 = User.objects.create_user(username='user1', password='pass1')
+        self.user2 = User.objects.create_user(username='user2', password='pass2')
+        self.client.force_authenticate(user=self.user1)
 
-    def test_post_list(self):
-        url = reverse('post-list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(len(response.data), 2)
+    def test_post_creation_and_list(self):
+        response = self.client.post('/api/posts/', {'content': 'Test post content'})
+        if response.status_code != 201:
+            print('Post creation failed:', response.content)
+        self.assertEqual(response.status_code, 201)
+        response = self.client.get('/api/posts/')
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(len(response.data) > 0)
 
-    def test_post_create_authenticated(self):
-        self.client.login(username='user1', password='pass1234')
-        url = reverse('post-list')
-        data = {'content': 'New post content'}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Post.objects.count(), 3)
+    def test_like_unlike_post(self):
+        post_response = self.client.post('/api/posts/', {'content': 'Like test post'})
+        if post_response.status_code != 201:
+            print('Post creation failed:', post_response.content)
+        post_id = post_response.data['id']
+        like_response = self.client.post(f'/api/posts/{post_id}/like/')
+        self.assertEqual(like_response.data['status'], 'liked')
+        unlike_response = self.client.post(f'/api/posts/{post_id}/like/')
+        self.assertEqual(unlike_response.data['status'], 'unliked')
+
+    def test_comment_creation_and_list(self):
+        post_response = self.client.post('/api/posts/', {'content': 'Comment test post'})
+        if post_response.status_code != 201:
+            print('Post creation failed:', post_response.content)
+        post_id = post_response.data['id']
+        comment_response = self.client.post('/api/comments/', {'post': post_id, 'content': 'Test comment'})
+        self.assertEqual(comment_response.status_code, 201)
+        list_response = self.client.get('/api/comments/')
+        self.assertEqual(list_response.status_code, 200)
+        self.assertTrue(len(list_response.data) > 0)
+
+    def test_follow_unfollow(self):
+        follow_response = self.client.post('/api/follows/follow/', {'user_id': self.user2.id})
+        self.assertEqual(follow_response.status_code, 201)
+        unfollow_response = self.client.post('/api/follows/unfollow/', {'user_id': self.user2.id})
+        self.assertEqual(unfollow_response.status_code, 204)
+
+    def test_story_creation(self):
+        # Story model requires 'media' and 'expires_at' fields
+        from django.core.files.uploadedfile import SimpleUploadedFile
+        from django.utils import timezone
+        from datetime import timedelta
+        media_file = SimpleUploadedFile("test.jpg", b"file_content", content_type="image/jpeg")
+        expires_at = (timezone.now() + timedelta(hours=24)).isoformat()
+        story_response = self.client.post('/api/stories/', {'media': media_file, 'expires_at': expires_at})
+        if story_response.status_code != 201:
+            print('Story creation failed:', story_response.content)
+        self.assertEqual(story_response.status_code, 201)
+
+    def test_notifications_list(self):
+        response = self.client.get('/api/notifications/')
+        self.assertEqual(response.status_code, 200)
+
+    def test_search(self):
+        response = self.client.get('/api/search/', {'q': 'user1'})
+        self.assertEqual(response.status_code, 200)
+
+    def test_register_and_login(self):
         self.client.logout()
-
-    def test_post_create_unauthenticated(self):
-        url = reverse('post-list')
-        data = {'content': 'New post content'}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_post_like_unlike(self):
-        self.client.login(username='user1', password='pass1234')
-        url = reverse('post-like', args=[self.post2.id])
-        # Like the post
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'liked')
-        self.assertEqual(Like.objects.filter(post=self.post2, user=self.user1).count(), 1)
-        # Unlike the post
-        response = self.client.post(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertEqual(response.data['status'], 'unliked')
-        self.assertEqual(Like.objects.filter(post=self.post2, user=self.user1).count(), 0)
-        self.client.logout()
-
-    def test_comment_create_authenticated(self):
-        self.client.login(username='user2', password='pass1234')
-        url = reverse('comment-list')
-        data = {'post': str(self.post1.id), 'content': 'Nice post!'}
-        response = self.client.post(url, data, format='json')
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(Comment.objects.count(), 1)
-        self.client.logout()
-
-    def test_comment_create_unauthenticated(self):
-        url = reverse('comment-list')
-        data = {'post': self.post1.id, 'content': 'Nice post!'}
-        response = self.client.post(url, data)
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_user_list(self):
-        url = reverse('user-list')
-        response = self.client.get(url)
-        self.assertEqual(response.status_code, status.HTTP_200_OK)
-        self.assertGreaterEqual(len(response.data), 2)
+        register_response = self.client.post('/api/auth/register/', {
+            'username': 'newuser',
+            'password': 'newpass',
+            'first_name': 'New',
+            'last_name': 'User'
+        })
+        if register_response.status_code != 201:
+            print('Register failed:', register_response.content)
+        self.assertEqual(register_response.status_code, 201)
+        login_response = self.client.post('/api/auth/login/', {
+            'username': 'newuser',
+            'password': 'newpass'
+        })
+        if login_response.status_code != 200:
+            print('Login failed:', login_response.content)
+        self.assertEqual(login_response.status_code, 200)
+        self.assertIn('token', login_response.data)

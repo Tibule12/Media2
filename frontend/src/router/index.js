@@ -30,6 +30,7 @@ const routes = [
   { path: '/search', component: Search },
   { path: '/create', component: PostCreate },
   { path: '/post/:id', component: PostDetail, props: true },
+  { path: '/feed', component: PostFeed },
 ]
 
 import store from '../store' // Assuming a Vuex store or similar for auth state

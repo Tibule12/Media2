@@ -31,11 +31,13 @@ export default {
   methods: {
     ...mapActions(['login']),
     async loginUser() {
+      console.log('loginUser method triggered')
       this.error = null
       try {
         await this.login({ username: this.username, password: this.password })
-        this.$router.push('/')
+        this.$router.push('/feed')
       } catch (err) {
+        console.error('Login error:', err)
         this.error = 'Login failed. Please check your credentials.'
       }
     },
