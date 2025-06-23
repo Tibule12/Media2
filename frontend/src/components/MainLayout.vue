@@ -9,13 +9,29 @@
         <li><router-link to="/chat">Chat</router-link></li>
         <li><router-link to="/search">Search</router-link></li>
       </ul>
-      <button class="logout-button" @click="$emit('logout')">Logout</button>
+      <button class="logout-button" @click="logout">Logout</button>
     </nav>
-<main>
-  <router-view></router-view>
-</main>
+    <Stories />
+    <main>
+      <router-view></router-view>
+    </main>
   </div>
 </template>
+
+<script>
+import Stories from './Stories.vue'
+
+export default {
+  components: {
+    Stories
+  },
+  methods: {
+    logout() {
+      this.$router.push('/logout')
+    }
+  }
+}
+</script>
 
 <style scoped>
 .navbar {
@@ -82,6 +98,7 @@
   color: #ff6f61;
   box-shadow: 0 6px 20px rgba(255, 59, 47, 0.7);
 }
+
 main {
   margin-top: 70px;
 }

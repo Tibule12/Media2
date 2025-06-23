@@ -3,16 +3,16 @@
     <h2>Posts</h2>
     <router-link to="/create" class="create-post-button">Create New Post</router-link>
 
-    <div class="filters">
-      <label for="sort">Sort by:</label>
-      <select id="sort" v-model="sortOrder" @change="fetchPosts">
+    <div class="filters" style="margin-bottom: 20px; display: flex; gap: 20px; align-items: center;">
+      <label for="sort" style="font-weight: bold; color: #ff6f61;">Sort by:</label>
+      <select id="sort" v-model="sortOrder" @change="fetchPosts" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ff6f61;">
         <option value="newest">Newest</option>
         <option value="oldest">Oldest</option>
         <option value="most_liked">Most Liked</option>
       </select>
 
-      <label for="filter">Filter by author:</label>
-      <input id="filter" v-model="authorFilter" @input="fetchPosts" placeholder="Author username" />
+      <label for="filter" style="font-weight: bold; color: #ff6f61;">Filter by author:</label>
+      <input id="filter" v-model="authorFilter" @input="fetchPosts" placeholder="Author username" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ff6f61;" />
     </div>
 
     <div v-if="posts.length === 0" class="no-posts">No posts yet.</div>
@@ -109,7 +109,7 @@ export default {
 
 <style scoped>
 .post {
-  border: none;
+  border: 1px solid #ff6f61;
   padding: 20px;
   margin-bottom: 20px;
   border-radius: 15px;
