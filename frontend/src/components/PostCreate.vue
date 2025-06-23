@@ -34,13 +34,15 @@ export default {
         this.files.forEach((file, index) => {
           formData.append(`media_${index}`, file)
         })
-        const token = localStorage.getItem('token')
-        await axios.post('/api/posts/', formData, {
+        const token = localStorage.getItem('authToken')
+        const response = await axios.post('/api/posts/', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
             'Authorization': `Token ${token}`,
           },
         })
+        console.log('Post created:', response.data)
+        this.$root.emitter.emit('postCreated')
         this.$router.push('/feed')
       } catch (err) {
         console.error('Create post error:', err)

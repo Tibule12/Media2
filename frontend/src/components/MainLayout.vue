@@ -49,6 +49,6 @@ nav ul li a.router-link-exact-active {
 }
 main {
   padding: 1rem;
-  pointer-events: none;
+  /* pointer-events: none; */
 }
 </style>

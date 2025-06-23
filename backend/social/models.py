@@ -9,6 +9,7 @@ class Post(models.Model):
 class Media(models.Model):
     post = models.ForeignKey(Post, on_delete=models.CASCADE, related_name='media')
     file = models.FileField(upload_to='media/')
+    media_type = models.CharField(max_length=20, null=True, blank=True)
     uploaded_at = models.DateTimeField(auto_now_add=True)
 
 class Comment(models.Model):
@@ -29,17 +30,19 @@ class Follow(models.Model):
 
 class Story(models.Model):
     author = models.ForeignKey(User, on_delete=models.CASCADE, related_name='stories')
-    media = models.FileField(upload_to='stories/')
+    media = models.FileField(upload_to='stories_media/')
+    media_type = models.CharField(choices=[('image', 'Image'), ('video', 'Video')], default='image', max_length=10)
     created_at = models.DateTimeField(auto_now_add=True)
     expires_at = models.DateTimeField()
 
 class Notification(models.Model):
     recipient = models.ForeignKey(User, on_delete=models.CASCADE, related_name='notifications')
-    actor = models.ForeignKey(User, on_delete=models.CASCADE, related_name='actions')
-    verb = models.CharField(max_length=255)
-    target_post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.CASCADE)
-    timestamp = models.DateTimeField(auto_now_add=True)
-    read = models.BooleanField(default=False)
+    sender = models.ForeignKey(User, on_delete=models.CASCADE, related_name='sent_notifications', null=True, blank=True)
+    notification_type = models.CharField(choices=[('like', 'Like'), ('comment', 'Comment'), ('follow', 'Follow'), ('mention', 'Mention'), ('other', 'Other')], max_length=20)
+    created_at = models.DateTimeField(auto_now_add=True)
+    is_read = models.BooleanField(default=False)
+    comment = models.ForeignKey('Comment', null=True, blank=True, on_delete=models.CASCADE)
+    post = models.ForeignKey(Post, null=True, blank=True, on_delete=models.CASCADE)
 
 class Message(models.Model):
     sender = models.ForeignKey(User, related_name='sent_messages', on_delete=models.CASCADE)

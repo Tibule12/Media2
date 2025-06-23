@@ -34,7 +34,13 @@ export default {
       console.log('loginUser method triggered')
       this.error = null
       try {
-        await this.login({ username: this.username, password: this.password })
+        const response = await axios.post('/api/auth/login/', {
+          username: this.username,
+          password: this.password,
+        })
+        const token = response.data.token
+        localStorage.setItem('authToken', token)
+        axios.defaults.headers.common['Authorization'] = `Token ${token}`
         this.$router.push('/feed')
       } catch (err) {
         console.error('Login error:', err)

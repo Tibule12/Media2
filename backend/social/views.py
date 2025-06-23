@@ -2,8 +2,8 @@ from rest_framework import viewsets, permissions
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.contrib.auth.models import User
-from .models import Post, Comment, Like, Story, Follow, Notification
-from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, StorySerializer, FollowSerializer, NotificationSerializer
+from .models import Post, Comment, Like, Story, Follow, Notification, Message
+from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, StorySerializer, FollowSerializer, NotificationSerializer, MessageSerializer, ConversationSerializer, MessageCreateSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .authentication import CsrfExemptSessionAuthentication
@@ -13,6 +13,53 @@ from django.db.models import Q
 from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
+
+class ChatConversationsView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def get(self, request):
+        user = request.user
+        # For simplicity, get distinct users who have sent or received messages with this user
+        sent_to = Message.objects.filter(sender=user).values_list('recipient__id', 'recipient__username').distinct()
+        received_from = Message.objects.filter(recipient=user).values_list('sender__id', 'sender__username').distinct()
+
+        participants = set()
+        for r in sent_to:
+            participants.add(r)
+        for r in received_from:
+            participants.add(r)
+
+        conversations = []
+        for participant in participants:
+            conversations.append({
+                'id': participant[0],
+                'participantName': participant[1]
+            })
+
+        serializer = ConversationSerializer(conversations, many=True)
+        return Response(serializer.data)
+
+class ChatMessagesView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def get(self, request, participant_id):
+        user = request.user
+        messages = Message.objects.filter(
+            (Q(sender=user) & Q(recipient__id=participant_id)) |
+            (Q(sender__id=participant_id) & Q(recipient=user))
+        ).order_by('timestamp')
+        serializer = MessageSerializer(messages, many=True)
+        return Response(serializer.data)
+
+    def post(self, request, participant_id):
+        user = request.user
+        serializer = MessageCreateSerializer(data=request.data)
+        if serializer.is_valid():
+            message = serializer.save(sender=user, recipient_id=participant_id)
+            return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
@@ -28,15 +75,8 @@ class PostViewSet(viewsets.ModelViewSet):
         request = self.request
         for key, file in request.FILES.items():
             if key.startswith('media_'):
-                # Determine media_type based on file content type or extension
-                content_type = file.content_type
-                if content_type.startswith('image/'):
-                    media_type = 'image'
-                elif content_type.startswith('video/'):
-                    media_type = 'video'
-                else:
-                    media_type = 'other'
-                post.media.create(file=file, media_type=media_type)
+                # Provide a default media_type value to satisfy NOT NULL constraint
+                post.media.create(file=file, media_type='unknown')
 
     @action(detail=True, methods=['post'], permission_classes=[IsAuthenticated])
     def like(self, request, pk=None):
