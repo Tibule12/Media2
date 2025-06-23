@@ -103,22 +103,112 @@ export default {
 <style scoped>
 .user-profile {
   max-width: 600px;
-  margin: 0 auto;
+  margin: 30px auto;
+  padding: 20px;
+  background-color: white;
+  border-radius: 15px;
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  color: #333;
 }
+
+.user-profile h2 {
+  margin-bottom: 20px;
+  font-weight: 700;
+  font-size: 2rem;
+  color: #ff6f61;
+}
+
 .user-profile form div {
-  margin-bottom: 1em;
+  margin-bottom: 1.5em;
 }
+
+.user-profile label {
+  font-weight: 700;
+  display: block;
+  margin-bottom: 6px;
+  color: #555;
+}
+
+.user-profile input[type="text"],
+.user-profile textarea {
+  width: 100%;
+  padding: 10px;
+  font-size: 1.1rem;
+  border: 2px solid #ff6f61;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+
+.user-profile input[type="text"]:focus,
+.user-profile textarea:focus {
+  border-color: #ff3b2f;
+  outline: none;
+}
+
+.user-profile input[disabled] {
+  background-color: #f0f0f0;
+  color: #999;
+  cursor: not-allowed;
+}
+
+.user-profile textarea {
+  resize: vertical;
+  min-height: 100px;
+}
+
+.user-profile img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: 12px;
+  margin-top: 10px;
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+}
+
+.user-profile button[type="submit"] {
+  background-color: #ff6f61;
+  color: white;
+  padding: 12px 30px;
+  border: none;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.user-profile button[type="submit"]:hover {
+  background-color: #ff3b2f;
+  box-shadow: 0 8px 30px rgba(255, 59, 47, 0.7);
+}
+
+.user-profile p {
+  margin-top: 15px;
+  font-weight: 600;
+}
+
+.user-profile p[style*="color: red"] {
+  color: #d9534f;
+}
+
 .follow-button {
   margin-top: 1em;
+  background-color: #ff6f61;
+  color: white;
+  padding: 10px 25px;
+  border: none;
+  border-radius: 25px;
+  font-weight: 700;
+  font-size: 1.1rem;
+  cursor: pointer;
+  box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
 }
-</style>
 
-<style scoped>
-.user-profile {
-  max-width: 600px;
-  margin: 0 auto;
-}
-.user-profile form div {
-  margin-bottom: 1em;
+.follow-button:hover {
+  background-color: #ff3b2f;
+  box-shadow: 0 8px 30px rgba(255, 59, 47, 0.7);
 }
 </style>

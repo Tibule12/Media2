@@ -1,18 +1,12 @@
 <template>
-  <div class="search-page">
-    <h2>Search</h2>
-    <input v-model="query" @input="performSearch" placeholder="Search users or posts..." />
-    <div v-if="loading">Loading...</div>
-    <div v-if="error" style="color:red">{{ error }}</div>
-    <div v-if="results.length === 0 && query">No results found.</div>
-    <ul>
-      <li v-for="item in results" :key="item.id">
-        <template v-if="item.type === 'user'">
-          <router-link :to="`/profile/${item.username}`">User: {{ item.username }}</router-link>
-        </template>
-        <template v-else-if="item.type === 'post'">
-          <router-link :to="`/post/${item.id}`">Post: {{ item.title }}</router-link>
-        </template>
+  <div class="search">
+    <input type="text" v-model="query" @input="onInput" placeholder="Search users, posts, hashtags, mentions..." />
+    <ul v-if="results.length > 0" class="results-list">
+      <li v-for="result in results" :key="result.type + '-' + result.id" @click="selectResult(result)">
+        <span v-if="result.type === 'user'">User: {{ result.username }}</span>
+        <span v-else-if="result.type === 'post'">Post: {{ result.title }}</span>
+        <span v-else-if="result.type === 'hashtag'">Hashtag: {{ result.tag }}</span>
+        <span v-else-if="result.type === 'mention'">Mention: {{ result.username }}</span>
       </li>
     </ul>
   </div>
@@ -20,48 +14,76 @@
 
 <script>
 import axios from 'axios'
-import debounce from 'lodash/debounce'
 
 export default {
   data() {
     return {
       query: '',
       results: [],
-      loading: false,
-      error: null,
     }
   },
   methods: {
-    performSearch: debounce(async function () {
-      if (!this.query.trim()) {
+    async onInput() {
+      if (this.query.length < 3) {
         this.results = []
         return
       }
-      this.loading = true
-      this.error = null
       try {
-        const response = await axios.get('/api/search/', {
-          params: { q: this.query }
-        })
+        const response = await axios.get('/api/search/', { params: { q: this.query } })
         this.results = response.data
-      } catch (err) {
-        this.error = 'Search failed. Please try again.'
-      } finally {
-        this.loading = false
+      } catch (error) {
+        console.error('Search failed', error)
       }
-    }, 300),
-  },
+    },
+    selectResult(result) {
+      if (result.type === 'user') {
+        this.$router.push(`/profile/${result.username}`)
+      } else if (result.type === 'post') {
+        this.$router.push(`/post/${result.id}`)
+      } else if (result.type === 'hashtag') {
+        this.$router.push(`/search?tag=${result.tag}`)
+      } else if (result.type === 'mention') {
+        this.$router.push(`/profile/${result.username}`)
+      }
+    }
+  }
 }
 </script>
 
 <style scoped>
-.search-page {
+.search {
   max-width: 600px;
-  margin: 0 auto;
+  margin: 20px auto;
 }
-.search-page input {
+.search input {
   width: 100%;
-  padding: 8px;
-  margin-bottom: 1em;
+  padding: 10px;
+  font-size: 1.1rem;
+  border: 2px solid #ff6f61;
+  border-radius: 8px;
+  box-sizing: border-box;
+  transition: border-color 0.3s ease;
+}
+.search input:focus {
+  border-color: #ff3b2f;
+  outline: none;
+}
+.results-list {
+  list-style: none;
+  padding: 0;
+  margin-top: 10px;
+  border: 1px solid #ff6f61;
+  border-radius: 8px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.results-list li {
+  padding: 10px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+}
+.results-list li:hover {
+  background-color: #ff6f61;
+  color: white;
 }
 </style>

@@ -3,7 +3,11 @@
     <h2>Notifications</h2>
     <ul>
       <li v-for="notification in notifications" :key="notification.id" :class="{ unread: !notification.read }">
-        <p>{{ notification.message }}</p>
+        <p>
+          <strong>{{ notification.actor }}</strong>
+          <span v-if="notification.verb">{{ notification.verb }}</span>
+<span v-if="notification.target_post">: <router-link :to="`/post/${notification.target_post.id}`">Post</router-link></span>
+        </p>
         <small>{{ new Date(notification.timestamp).toLocaleString() }}</small>
       </li>
     </ul>

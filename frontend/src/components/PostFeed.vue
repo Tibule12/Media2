@@ -107,10 +107,56 @@ export default {
 }
 </script>
 
-<style>
+<style scoped>
 .post {
-  border: 1px solid #ccc;
-  padding: 10px;
-  margin-bottom: 10px;
+  border: none;
+  padding: 20px;
+  margin-bottom: 20px;
+  border-radius: 15px;
+  background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%);
+  box-shadow: 0 6px 20px rgba(255, 105, 97, 0.3);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.post:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 30px rgba(255, 105, 97, 0.5);
+}
+
+.create-post-button {
+  display: inline-block;
+  margin-bottom: 20px;
+  padding: 12px 30px;
+  background-color: #ff6f61;
+  color: white;
+  border-radius: 30px;
+  font-weight: 700;
+  font-size: 1.2rem;
+  box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
+  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+}
+
+.create-post-button:hover {
+  background-color: #ff3b2f;
+  box-shadow: 0 8px 30px rgba(255, 59, 47, 0.7);
+}
+
+.media-container {
+  margin-top: 15px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+}
+
+.post-image, .post-video {
+  border-radius: 12px;
+  max-width: 100%;
+  max-height: 300px;
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+  transition: transform 0.3s ease;
+}
+
+.post-image:hover, .post-video:hover {
+  transform: scale(1.05);
 }
 </style>

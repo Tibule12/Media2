@@ -102,6 +102,14 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
+class CurrentUserView(APIView):
+    permission_classes = [IsAuthenticated]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def get(self, request):
+        serializer = UserSerializer(request.user)
+        return Response(serializer.data)
+
 class StoryViewSet(viewsets.ModelViewSet):
     queryset = Story.objects.all().order_by('-created_at')
     serializer_class = StorySerializer
