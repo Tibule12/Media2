@@ -1,0 +1,4 @@
+exclude:
+  - "frontend/node_modules"
+  - "node_modules"
+  - "frontend/node_modules/balanced-match/README.md"
