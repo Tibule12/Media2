@@ -4,43 +4,53 @@ describe('Functional Tests', () => {
   })
 
   it('should register a new user and redirect to login', () => {
-    cy.visit('/register')
-    cy.get('input[placeholder="Username"]').type('testuser')
-    cy.get('input[placeholder="Email"]').type('testuser@example.com')
-    cy.get('input[placeholder="Password"]').type('Password123!')
-    cy.get('input[placeholder="First Name"]').type('Test')
-    cy.get('input[placeholder="Last Name"]').type('User')
-    cy.get('button[type="submit"]').contains('Register').click()
-    cy.wait(1000)
-    cy.url().should('include', '/login')
+    // Delete test user if exists to avoid duplicate registration error
+    cy.request({
+      method: 'DELETE',
+      url: '/api/auth/delete_test_user/',
+      failOnStatusCode: false,
+    }).then(() => {
+      cy.visit('/register')
+      cy.get('input[placeholder="Username"]').type('testuser')
+      cy.get('input[placeholder="Email"]').type('testuser@example.com')
+      cy.get('input[placeholder="Password"]').type('Password123!')
+      cy.get('input[placeholder="First Name"]').type('Test')
+      cy.get('input[placeholder="Last Name"]').type('User')
+      cy.get('button[type="submit"]').contains('Register').click()
+      cy.url({ timeout: 10000 }).should('include', '/login')
+    })
   })
 
   it('should login with valid credentials and redirect to home', () => {
     cy.visit('/login')
-    cy.get('input[placeholder="Email"]').type('testuser')
+    cy.get('input[placeholder="Email"]').type('testuser@example.com')
     cy.get('input[placeholder="Password"]').type('Password123!')
     cy.get('button[type="submit"]').contains('Login').click()
-    cy.wait(1000)
-    cy.url().should('eq', Cypress.config().baseUrl + '/')
+    cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/')
   })
 
   it('should navigate to signup and forgot password from login form', () => {
     cy.visit('/login')
     cy.contains('Signup').click()
-    cy.url().should('include', '/register')
+    cy.url({ timeout: 10000 }).should('include', '/register')
     cy.visit('/login')
     cy.contains('Forgot Password').click()
-    cy.url().should('include', '/password-reset')
+    cy.url({ timeout: 10000 }).should('include', '/password-reset')
   })
 
   it('should navigate to login from register form', () => {
     cy.visit('/register')
     cy.contains('Login').click()
-    cy.url().should('include', '/login')
+    cy.url({ timeout: 10000 }).should('include', '/login')
   })
 
   it('should update user profile successfully', () => {
-    // Remove cy.login and manually visit profile page for now
+    // Login first before visiting profile page
+    cy.visit('/login')
+    cy.get('input[placeholder="Email"]').type('testuser@example.com')
+    cy.get('input[placeholder="Password"]').type('Password123!')
+    cy.get('button[type="submit"]').contains('Login').click()
+    cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/')
     cy.visit('/profile')
     cy.get('input#fullName').clear().type('Test User Updated')
     cy.get('textarea#bio').clear().type('Updated bio')
@@ -49,7 +59,12 @@ describe('Functional Tests', () => {
   })
 
   it('should create a new story with media upload', () => {
-    // Remove cy.login and manually visit story create page for now
+    // Login first before visiting story create page
+    cy.visit('/login')
+    cy.get('input[placeholder="Email"]').type('testuser@example.com')
+    cy.get('input[placeholder="Password"]').type('Password123!')
+    cy.get('button[type="submit"]').contains('Login').click()
+    cy.url({ timeout: 10000 }).should('eq', Cypress.config().baseUrl + '/')
     cy.visit('/story/create')
     const imagePath = 'images/sample.jpg' // Ensure this file exists in cypress/fixtures/images/
     cy.get('input#media').attachFile(imagePath)
