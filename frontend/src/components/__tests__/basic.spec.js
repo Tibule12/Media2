@@ -19,8 +19,14 @@ describe('Basic UI Tests', () => {
   })
 
   it('should navigate to profile page', () => {
+    // Login first
+    cy.visit('/login')
+    cy.get('input[placeholder="Email"]').type('testuser@example.com')
+    cy.get('input[placeholder="Password"]').type('testpassword')
+    cy.get('button[type="submit"]').click()
+    // After login, visit profile page
     cy.visit('/profile')
-    cy.contains('User Profile', { timeout: 10000 }).should('be.visible')
+    cy.get('h1').contains('User Profile', { timeout: 10000 }).should('be.visible')
   })
 
   it('should navigate to story create page', () => {
