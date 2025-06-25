@@ -1,0 +1,1 @@
+import{_ as o,o as t,c as e}from"./index-b19461a9.js";const s={name:"Logout",mounted(){this.$store.dispatch("logout"),this.$router.push("/login")}};function n(r,c,a,u,i,p){return t(),e("div",null," Logging out... ")}const l=o(s,[["render",n]]);export{l as default};
