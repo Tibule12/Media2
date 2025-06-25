@@ -70,6 +70,7 @@ class SocialMediaAPITest(TestCase):
         self.client.logout()
         register_response = self.client.post('/api/auth/register/', {
             'username': 'newuser',
+            'email': 'newuser@example.com',
             'password': 'newpass',
             'first_name': 'New',
             'last_name': 'User'
@@ -78,7 +79,7 @@ class SocialMediaAPITest(TestCase):
             print('Register failed:', register_response.content)
         self.assertEqual(register_response.status_code, 201)
         login_response = self.client.post('/api/auth/login/', {
-            'username': 'newuser',
+            'email': 'newuser@example.com',
             'password': 'newpass'
         })
         if login_response.status_code != 200:

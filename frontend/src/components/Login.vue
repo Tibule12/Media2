@@ -1,12 +1,16 @@
-<template>
+ord<template>
   <div class="auth-container">
     <div class="auth-content">
       <h1>Login</h1>
       <form @submit.prevent="loginUser">
-        <input v-model="username" type="text" placeholder="Username" required />
-        <input v-model="password" type="password" placeholder="Password" required />
+        <input v-model="email" type="email" placeholder="Email" required autocomplete="email" />
+        <input v-model="password" type="password" placeholder="Password" required autocomplete="current-password" />
         <button type="submit" class="btn btn-primary">Login</button>
       </form>
+      <div style="margin-top: 20px; display: flex; justify-content: center; gap: 15px;">
+        <button class="btn btn-secondary" @click="$router.push('/register')">Signup</button>
+        <button class="btn btn-secondary" @click="$router.push('/password-reset')">Forgot Password</button>
+      </div>
       <p v-if="error" class="error-message">{{ formattedError }}</p>
     </div>
   </div>
@@ -19,7 +23,7 @@ import { mapActions } from 'vuex'
 export default {
   data() {
     return {
-      username: '',
+      email: '',
       password: '',
       error: null,
     }
@@ -45,7 +49,7 @@ export default {
     async loginUser() {
       this.error = null
       try {
-        await this.login({ username: this.username, password: this.password })
+        await this.login({ email: this.email.trim(), password: this.password })
         this.$router.push('/')
       } catch (err) {
         if (err.response && err.response.data) {
@@ -121,6 +125,26 @@ button.btn:hover {
   cursor: pointer;
 }
 
+button.btn-secondary {
+  width: 100%;
+  padding: 14px;
+  font-size: 1.1rem;
+  font-weight: 600;
+  color: #ff6f61;
+  background: transparent;
+  border: 2px solid #ff6f61;
+  border-radius: 50px;
+  box-shadow: none;
+  transition: background-color 0.3s ease, color 0.3s ease;
+  cursor: pointer;
+  margin-top: 12px;
+}
+
+button.btn-secondary:hover {
+  background-color: #ff6f61;
+  color: #fff;
+}
+
 .error-message {
   color: #ff3b2f;
   margin-top: 10px;
@@ -136,5 +160,28 @@ button.btn:hover {
     opacity: 1;
     transform: scale(1);
   }
+}
+.auth-buttons {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+}
+
+.auth-buttons .btn {
+  width: 48%;
+  padding: 10px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #ff6f61;
+  background: #fff;
+  border-radius: 50px;
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+.auth-buttons .btn:hover {
+  background-color: #ff3b2f;
+  color: #fff;
 }
 </style>

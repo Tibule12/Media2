@@ -10,6 +10,7 @@
         <input v-model="last_name" type="text" placeholder="Last Name" required />
         <button type="submit" class="btn btn-primary">Register</button>
       </form>
+      <button class="btn btn-secondary" @click="$router.push('/login')" style="margin-top: 10px;">Login</button>
       <p v-if="error" class="error-message">{{ formattedError }}</p>
     </div>
   </div>
@@ -58,9 +59,8 @@ export default {
           email: this.email,
           password: this.password,
         })
-        // Automatically login after registration
-        await this.login({ username: this.username, password: this.password })
-        this.$router.push('/')
+        // After registration, redirect to login page
+        this.$router.push('/login')
       } catch (err) {
         if (err.response && err.response.data) {
           console.log('Registration error response:', err.response.data);
@@ -74,6 +74,9 @@ export default {
         }
       }
     },
+    goToLogin() {
+      this.$router.push('/login')
+    }
   },
 }
 </script>

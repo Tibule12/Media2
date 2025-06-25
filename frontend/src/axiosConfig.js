@@ -1,10 +1,24 @@
 import axios from 'axios';
 
-axios.defaults.baseURL = 'http://localhost:8000';
+const axiosInstance = axios.create({
+  baseURL: 'http://localhost:8000',
+  headers: {
+    'Content-Type': 'application/json',
+  }
+});
 
-const token = localStorage.getItem('authToken');
-if (token) {
-  axios.defaults.headers.common['Authorization'] = `Token ${token}`;
-}
+// Add a request interceptor to set Authorization header dynamically
+axiosInstance.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Token ${token}`;
+    }
+    return config;
+  },
+  error => {
+    return Promise.reject(error);
+  }
+);
 
-export default axios;
+export default axiosInstance;

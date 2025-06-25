@@ -1,5 +1,5 @@
 import { createStore } from 'vuex'
-import axios from '../axiosConfig'
+import axiosInstance from '../axiosConfig'
 
 const store = createStore({
   state() {
@@ -31,13 +31,13 @@ const store = createStore({
   actions: {
     async login({ commit }, credentials) {
       try {
-        const response = await axios.post('/api/auth/login/', credentials)
+        const response = await axiosInstance.post('/api/auth/login/', credentials)
         const token = response.data.token
         localStorage.setItem('token', token)
         commit('setToken', token)
         // Optionally fetch user info here
         commit('setUser', response.data.user || null)
-        axios.defaults.headers.common['Authorization'] = `Token ${token}`
+        axiosInstance.defaults.headers.common['Authorization'] = `Token ${token}`
         return true
       } catch (error) {
         commit('clearAuth')
@@ -48,7 +48,7 @@ const store = createStore({
     logout({ commit }) {
       commit('clearAuth')
       localStorage.removeItem('token')
-      delete axios.defaults.headers.common['Authorization']
+      delete axiosInstance.defaults.headers.common['Authorization']
     }
   }
 })

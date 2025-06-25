@@ -15,22 +15,29 @@
       <input id="filter" v-model="authorFilter" @input="fetchPosts" placeholder="Author username" style="padding: 5px 10px; border-radius: 5px; border: 1px solid #ff6f61;" />
     </div>
 
-    <div v-if="posts.length === 0" class="no-posts">No posts yet.</div>
-    <div v-for="post in posts" :key="post.id" class="post">
-      <router-link :to="'/post/' + post.id" class="post-link">
-        <h3>{{ post.author.username }}</h3>
-        <p>{{ post.content }}</p>
-        <div class="media-container">
-          <template v-for="media in post.media" :key="media.id">
-            <img v-if="media.media_type === 'image'" :src="getMediaUrl(media.file)" alt="Post image" class="post-image" />
-            <video v-else-if="media.media_type === 'video'" controls class="post-video">
-              <source :src="getMediaUrl(media.file)" type="video/mp4" />
-              Your browser does not support the video tag.
-            </video>
-          </template>
-        </div>
-      </router-link>
-      <p>Likes: {{ post.likes ? post.likes.length : 0 }}</p>
+    <div v-if="loading" class="loader-container">
+      <div class="loader"></div>
+      <p>Loading posts...</p>
+    </div>
+
+    <div v-else>
+      <div v-if="posts.length === 0" class="no-posts">No posts yet.</div>
+      <div v-for="post in posts" :key="post.id" class="post">
+        <router-link :to="'/post/' + post.id" class="post-link">
+          <h3>{{ post.author.username }}</h3>
+          <p>{{ post.content }}</p>
+          <div class="media-container">
+            <template v-for="media in post.media" :key="media.id">
+              <img v-if="media.media_type === 'image'" :src="getMediaUrl(media.file)" alt="Post image" class="post-image" loading="lazy" />
+              <video v-else-if="media.media_type === 'video'" controls class="post-video" preload="metadata">
+                <source :src="getMediaUrl(media.file)" type="video/mp4" />
+                Your browser does not support the video tag.
+              </video>
+            </template>
+          </div>
+        </router-link>
+        <p>Likes: {{ post.likes ? post.likes.length : 0 }}</p>
+      </div>
     </div>
   </div>
 </template>
@@ -45,6 +52,7 @@ export default {
       sortOrder: 'newest',
       authorFilter: '',
       fetchTimeout: null,
+      loading: false,
     }
   },
   watch: {
@@ -86,6 +94,7 @@ export default {
       return `/media/${file}`
     },
     async fetchPosts() {
+      this.loading = true
       try {
         const params = {}
         if (this.sortOrder) params.sort = this.sortOrder
@@ -101,6 +110,8 @@ export default {
         }
       } catch (error) {
         console.error('Failed to load posts', error)
+      } finally {
+        this.loading = false
       }
     }
   }
@@ -158,5 +169,32 @@ export default {
 
 .post-image:hover, .post-video:hover {
   transform: scale(1.05);
+}
+</style>
+
+<style scoped>
+.loader-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  margin: 40px 0;
+  color: #ff6f61;
+  font-weight: 700;
+  font-size: 1.2rem;
+}
+
+.loader {
+  border: 6px solid #f3f3f3;
+  border-top: 6px solid #ff6f61;
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  animation: spin 1s linear infinite;
+  margin-bottom: 10px;
+}
+
+@keyframes spin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
 }
 </style>

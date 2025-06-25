@@ -9,10 +9,38 @@ class CommentSerializer(serializers.ModelSerializer):
         model = Comment
         fields = ['id', 'post', 'author', 'content', 'created_at']
 
+from .models_user_profile import UserProfile
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = ['fullName', 'bio', 'profilePicture']
+
 class UserSerializer(serializers.ModelSerializer):
+    profile = UserProfileSerializer(required=False)
+
     class Meta:
         model = User
-        fields = ['id', 'username', 'email', 'first_name', 'last_name']
+        fields = ['id', 'username', 'email', 'first_name', 'last_name', 'profile']
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop('profile', {})
+        fullName = profile_data.get('fullName')
+        bio = profile_data.get('bio')
+        profilePicture = profile_data.get('profilePicture')
+
+        instance = super().update(instance, validated_data)
+
+        profile = instance.profile
+        if fullName is not None:
+            profile.fullName = fullName
+        if bio is not None:
+            profile.bio = bio
+        if profilePicture is not None:
+            profile.profilePicture = profilePicture
+        profile.save()
+
+        return instance
 
 class MediaSerializer(serializers.ModelSerializer):
     class Meta:

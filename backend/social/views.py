@@ -222,19 +222,24 @@ class SearchView(APIView):
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
+    email = serializers.EmailField(required=True)
     first_name = serializers.CharField(required=True)
     last_name = serializers.CharField(required=True)
     birthday = serializers.DateField(required=False, allow_null=True)
 
     class Meta:
         model = User
-        fields = ('username', 'email', 'password', 'first_name', 'last_name', 'birthday')
+        fields = ('email', 'password', 'first_name', 'last_name', 'birthday')
 
     def create(self, validated_data):
         birthday = validated_data.pop('birthday', None)
+        email = validated_data['email']
+        # Check if user with this email already exists
+        if User.objects.filter(email=email).exists():
+            raise serializers.ValidationError("User with this email already exists.")
         user = User.objects.create_user(
-            username=validated_data['username'],
-            email=validated_data.get('email', ''),
+            username=email,  # Use email as username
+            email=email,
             password=validated_data['password'],
             first_name=validated_data.get('first_name', ''),
             last_name=validated_data.get('last_name', '')
@@ -260,9 +265,21 @@ class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
     def post(self, request):
-        username = request.data.get('username')
+        email = request.data.get('email')
         password = request.data.get('password')
-        user = authenticate(username=username, password=password)
+        user = None
+        if email:
+            from django.contrib.auth import get_user_model
+            UserModel = get_user_model()
+            try:
+                user_obj = UserModel.objects.get(email=email)
+                user = authenticate(username=user_obj.username, password=password)
+            except UserModel.DoesNotExist:
+                user = None
+            except UserModel.MultipleObjectsReturned:
+                # Handle multiple users with same email gracefully
+                user = UserModel.objects.filter(email=email).first()
+                user = authenticate(username=user.username, password=password)
         if user:
             token, created = Token.objects.get_or_create(user=user)
             return Response({'token': token.key}, status=status.HTTP_200_OK)

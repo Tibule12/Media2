@@ -1,214 +1,177 @@
 <template>
-  <div class="user-profile">
-    <h2>User Profile</h2>
-    <form @submit.prevent="updateProfile">
-      <div>
-        <label>Username:</label>
-        <input v-model="user.username" disabled />
+  <div class="profile-container">
+    <h1>User Profile</h1>
+    <p v-if="!profile.fullName && !profile.bio && !profilePicturePreview" class="loading-message">Loading profile...</p>
+    <form @submit.prevent="updateProfile" enctype="multipart/form-data">
+      <div class="form-group">
+        <label for="fullName">Full Name</label>
+        <input id="fullName" v-model="profile.fullName" type="text" placeholder="Full Name" />
       </div>
-      <div>
-        <label>Full Name:</label>
-        <input v-model="user.fullName" />
+      <div class="form-group">
+        <label for="bio">Bio</label>
+        <textarea id="bio" v-model="profile.bio" placeholder="Tell us about yourself"></textarea>
       </div>
-      <div>
-        <label>Bio:</label>
-        <textarea v-model="user.bio"></textarea>
+      <div class="form-group">
+        <label for="profilePicture">Profile Picture</label>
+        <input id="profilePicture" type="file" @change="onFileChange" />
+        <div v-if="profilePicturePreview" class="preview">
+          <img :src="profilePicturePreview" alt="Profile Picture Preview" />
+        </div>
       </div>
-      <div>
-        <label>Profile Picture:</label>
-        <input type="file" @change="onFileChange" />
-        <img v-if="previewImage" :src="previewImage" alt="Profile Preview" style="max-width: 200px; max-height: 200px;" />
-      </div>
-      <button type="submit">Save</button>
+      <button type="submit" class="btn btn-primary">Save Profile</button>
+      <p v-if="message" class="success-message">{{ message }}</p>
+      <p v-if="error" class="error-message">{{ error }}</p>
     </form>
-    <p v-if="message" style="color:green">{{ message }}</p>
-    <p v-if="error" style="color:red">{{ error }}</p>
   </div>
 </template>
 
 <script>
-import axios from 'axios'
+import axiosInstance from '../axiosConfig'
 
 export default {
   data() {
     return {
-      user: {
-        username: '',
+      profile: {
         fullName: '',
         bio: '',
         profilePicture: null,
-        isFollowing: false,
       },
-      previewImage: null,
-      message: null,
-      error: null,
+      profilePicturePreview: null,
+      message: '',
+      error: '',
     }
   },
   async created() {
-    try {
-      const response = await axios.get('/api/users/me/')
-      this.user = response.data
-      // Fetch follow status if viewing another user's profile
-      if (this.$route.params.username && this.$route.params.username !== this.user.username) {
-        const followResp = await axios.get(`/api/users/${this.$route.params.username}/follow-status/`)
-        this.user.isFollowing = followResp.data.isFollowing
-      }
-    } catch (err) {
-      this.error = 'Failed to load user profile.'
-    }
+    await this.fetchProfile()
   },
   methods: {
+    async fetchProfile() {
+      this.error = ''
+      try {
+        const response = await axiosInstance.get('/api/users/me/')
+        this.profile.fullName = response.data.profile?.fullName || ''
+        this.profile.bio = response.data.profile?.bio || ''
+        this.profilePicturePreview = response.data.profile?.profilePicture || null
+      } catch (err) {
+        this.error = 'Failed to load profile. Please login again.'
+      }
+    },
     onFileChange(event) {
       const file = event.target.files[0]
-      this.user.profilePicture = file
-      this.previewImage = URL.createObjectURL(file)
+      if (file) {
+        this.profile.profilePicture = file
+        this.profilePicturePreview = URL.createObjectURL(file)
+      }
     },
     async updateProfile() {
-      this.message = null
-      this.error = null
+      this.error = ''
+      this.message = ''
       try {
         const formData = new FormData()
-        formData.append('fullName', this.user.fullName)
-        formData.append('bio', this.user.bio)
-        if (this.user.profilePicture) {
-          formData.append('profilePicture', this.user.profilePicture)
+        formData.append('fullName', this.profile.fullName)
+        formData.append('bio', this.profile.bio)
+        if (this.profile.profilePicture instanceof File) {
+          formData.append('profilePicture', this.profile.profilePicture)
         }
-        await axios.put('/api/users/me/', formData, {
+        const response = await axiosInstance.put('/api/users/me/', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
           },
         })
         this.message = 'Profile updated successfully.'
+        this.profilePicturePreview = response.data.profile?.profilePicture || this.profilePicturePreview
       } catch (err) {
         this.error = 'Failed to update profile.'
       }
     },
-    async toggleFollow() {
-      try {
-        if (this.user.isFollowing) {
-          await axios.post(`/api/users/${this.user.username}/unfollow/`)
-          this.user.isFollowing = false
-        } else {
-          await axios.post(`/api/users/${this.user.username}/follow/`)
-          this.user.isFollowing = true
-        }
-      } catch (err) {
-        this.error = 'Failed to update follow status.'
-      }
-    }
   },
 }
 </script>
 
 <style scoped>
-.user-profile {
+.profile-container {
   max-width: 600px;
-  margin: 30px auto;
+  margin: 40px auto;
   padding: 20px;
-  background-color: white;
+  background: rgba(255, 111, 97, 0.85);
   border-radius: 15px;
-  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+  color: #fff;
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  color: #333;
 }
 
-.user-profile h2 {
+h1 {
+  text-align: center;
+  margin-bottom: 30px;
+  font-weight: 900;
+  font-size: 2.5rem;
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.7);
+}
+
+.form-group {
   margin-bottom: 20px;
-  font-weight: 700;
-  font-size: 2rem;
-  color: #ff6f61;
 }
 
-.user-profile form div {
-  margin-bottom: 1.5em;
-}
-
-.user-profile label {
-  font-weight: 700;
+label {
   display: block;
-  margin-bottom: 6px;
-  color: #555;
+  margin-bottom: 8px;
+  font-weight: 700;
 }
 
-.user-profile input[type="text"],
-.user-profile textarea {
+input[type="text"],
+textarea {
   width: 100%;
-  padding: 10px;
-  font-size: 1.1rem;
-  border: 2px solid #ff6f61;
-  border-radius: 8px;
-  box-sizing: border-box;
-  transition: border-color 0.3s ease;
-}
-
-.user-profile input[type="text"]:focus,
-.user-profile textarea:focus {
-  border-color: #ff3b2f;
-  outline: none;
-}
-
-.user-profile input[disabled] {
-  background-color: #f0f0f0;
-  color: #999;
-  cursor: not-allowed;
-}
-
-.user-profile textarea {
+  padding: 12px 15px;
+  border-radius: 10px;
+  border: none;
+  font-size: 1rem;
   resize: vertical;
+}
+
+textarea {
   min-height: 100px;
 }
 
-.user-profile img {
-  max-width: 200px;
-  max-height: 200px;
-  border-radius: 12px;
+input[type="file"] {
+  color: #fff;
+}
+
+.preview img {
   margin-top: 10px;
-  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.4);
+  max-width: 150px;
+  border-radius: 50%;
+  box-shadow: 0 4px 15px rgba(255, 111, 97, 0.6);
 }
 
-.user-profile button[type="submit"] {
-  background-color: #ff6f61;
-  color: white;
-  padding: 12px 30px;
-  border: none;
-  border-radius: 30px;
-  font-weight: 700;
+button.btn-primary {
+  width: 100%;
+  padding: 15px;
   font-size: 1.2rem;
-  cursor: pointer;
-  box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
-}
-
-.user-profile button[type="submit"]:hover {
-  background-color: #ff3b2f;
-  box-shadow: 0 8px 30px rgba(255, 59, 47, 0.7);
-}
-
-.user-profile p {
-  margin-top: 15px;
-  font-weight: 600;
-}
-
-.user-profile p[style*="color: red"] {
-  color: #d9534f;
-}
-
-.follow-button {
-  margin-top: 1em;
-  background-color: #ff6f61;
-  color: white;
-  padding: 10px 25px;
-  border: none;
-  border-radius: 25px;
   font-weight: 700;
-  font-size: 1.1rem;
-  cursor: pointer;
+  color: #ff6f61;
+  background: #fff;
+  border-radius: 50px;
   box-shadow: 0 6px 20px rgba(255, 111, 97, 0.5);
-  transition: background-color 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+  transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
 }
 
-.follow-button:hover {
+button.btn-primary:hover {
   background-color: #ff3b2f;
+  color: #fff;
   box-shadow: 0 8px 30px rgba(255, 59, 47, 0.7);
+}
+
+.success-message {
+  margin-top: 15px;
+  color: #a6f0a6;
+  font-weight: 700;
+  text-align: center;
+}
+
+.error-message {
+  margin-top: 15px;
+  color: #ff3b2f;
+  font-weight: 700;
+  text-align: center;
 }
 </style>
