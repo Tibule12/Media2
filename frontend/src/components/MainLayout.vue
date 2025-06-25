@@ -13,6 +13,7 @@
         <li><router-link to="/notifications" @click.native="closeMobileMenu">Notifications</router-link></li>
         <li><router-link to="/chat" @click.native="closeMobileMenu">Chat</router-link></li>
         <li><router-link to="/search" @click.native="closeMobileMenu">Search</router-link></li>
+        <li><router-link to="/story/create" @click.native="closeMobileMenu">Create Story</router-link></li>
       </ul>
       <button class="theme-toggle-button" @click="toggleTheme" :aria-label="`Switch to ${isDark ? 'light' : 'dark'} mode`">
         <span v-if="isDark">🌞</span>
