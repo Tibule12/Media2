@@ -17,13 +17,18 @@
       <p v-if="message" class="success-message">{{ message }}</p>
       <p v-if="error" class="error-message">{{ error }}</p>
     </form>
+    <Stories />
   </div>
 </template>
 
 <script>
 import axiosInstance from '../axiosConfig'
+import Stories from './Stories.vue'
 
 export default {
+  components: {
+    Stories
+  },
   data() {
     return {
       mediaFile: null,

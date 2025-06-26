@@ -2,12 +2,14 @@
   <div class="auth-container">
     <div class="auth-content">
       <h1>Register</h1>
-      <form @submit.prevent="registerUser">
+      <form @submit.prevent="registerUser" enctype="multipart/form-data">
         <input v-model="username" type="text" placeholder="Username" required />
         <input v-model="email" type="email" placeholder="Email" required />
         <input v-model="password" type="password" placeholder="Password" required />
         <input v-model="first_name" type="text" placeholder="First Name" required />
         <input v-model="last_name" type="text" placeholder="Last Name" required />
+        <input v-model="fullName" type="text" placeholder="Full Name" />
+        <input type="file" @change="onFileChange" accept="image/*" />
         <button type="submit" class="btn btn-primary">Register</button>
       </form>
       <button class="btn btn-secondary" @click="$router.push('/login')" style="margin-top: 10px;">Login</button>
@@ -76,6 +78,43 @@ export default {
     },
     goToLogin() {
       this.$router.push('/login')
+    },
+    onFileChange(event) {
+      const file = event.target.files[0]
+      this.profilePicture = file
+    },
+    async registerUser() {
+      this.error = null
+      try {
+        const formData = new FormData()
+        formData.append('username', this.username)
+        formData.append('email', this.email)
+        formData.append('password', this.password)
+        formData.append('first_name', this.first_name)
+        formData.append('last_name', this.last_name)
+        formData.append('fullName', this.fullName)
+        if (this.profilePicture) {
+          formData.append('profilePicture', this.profilePicture)
+        }
+        await axios.post('/api/auth/register/', formData, {
+          headers: {
+            'Content-Type': 'multipart/form-data'
+          }
+        })
+        // After registration, redirect to login page
+        this.$router.push('/login')
+      } catch (err) {
+        if (err.response && err.response.data) {
+          console.log('Registration error response:', err.response.data);
+          // Format and display detailed validation errors
+          const errors = err.response.data
+          this.error = Object.entries(errors).map(function([field, msgs]) {
+            return field + ": " + (Array.isArray(msgs) ? msgs.join(", ") : msgs);
+          }).join("; ")
+        } else {
+          this.error = 'Registration failed. Please try again.'
+        }
+      }
     }
   },
 }

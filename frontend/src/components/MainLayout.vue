@@ -21,7 +21,8 @@
       </button>
       <button class="logout-button" @click="logout">Logout</button>
     </nav>
-    <Stories />
+    <!-- Remove Stories component from MainLayout to prevent showing on all pages -->
+    <!-- <Stories /> -->
     <main>
       <router-view></router-view>
     </main>

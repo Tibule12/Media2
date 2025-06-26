@@ -1,65 +1,16 @@
-from rest_framework import viewsets, permissions
-from rest_framework.decorators import action
+from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework import status, permissions, serializers, viewsets
 from django.contrib.auth.models import User
 from .models import Post, Comment, Like, Story, Follow, Notification, Message
 from .serializers import PostSerializer, CommentSerializer, LikeSerializer, UserSerializer, StorySerializer, FollowSerializer, NotificationSerializer, MessageSerializer, ConversationSerializer, MessageCreateSerializer
 from rest_framework.permissions import IsAuthenticatedOrReadOnly, IsAuthenticated
 from rest_framework.authentication import TokenAuthentication
 from .authentication import CsrfExemptSessionAuthentication
-from rest_framework.views import APIView
-from rest_framework import status
+from rest_framework.decorators import action
 from django.db.models import Q
-from rest_framework import serializers
 from django.contrib.auth import authenticate
 from rest_framework.authtoken.models import Token
-
-class ChatConversationsView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def get(self, request):
-        user = request.user
-        # For simplicity, get distinct users who have sent or received messages with this user
-        sent_to = Message.objects.filter(sender=user).values_list('recipient__id', 'recipient__username').distinct()
-        received_from = Message.objects.filter(recipient=user).values_list('sender__id', 'sender__username').distinct()
-
-        participants = set()
-        for r in sent_to:
-            participants.add(r)
-        for r in received_from:
-            participants.add(r)
-
-        conversations = []
-        for participant in participants:
-            conversations.append({
-                'id': participant[0],
-                'participantName': participant[1]
-            })
-
-        serializer = ConversationSerializer(conversations, many=True)
-        return Response(serializer.data)
-
-class ChatMessagesView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def get(self, request, participant_id):
-        user = request.user
-        messages = Message.objects.filter(
-            (Q(sender=user) & Q(recipient__id=participant_id)) |
-            (Q(sender__id=participant_id) & Q(recipient=user))
-        ).order_by('timestamp')
-        serializer = MessageSerializer(messages, many=True)
-        return Response(serializer.data)
-
-    def post(self, request, participant_id):
-        user = request.user
-        serializer = MessageCreateSerializer(data=request.data)
-        if serializer.is_valid():
-            message = serializer.save(sender=user, recipient_id=participant_id)
-            return Response(MessageSerializer(message).data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 class PostViewSet(viewsets.ModelViewSet):
     queryset = Post.objects.all().order_by('-created_at')
@@ -102,88 +53,6 @@ class UserViewSet(viewsets.ReadOnlyModelViewSet):
     serializer_class = UserSerializer
     permission_classes = [permissions.AllowAny]
 
-class CurrentUserView(APIView):
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def get(self, request):
-        serializer = UserSerializer(request.user)
-        return Response(serializer.data)
-
-class StoryViewSet(viewsets.ModelViewSet):
-    queryset = Story.objects.all().order_by('-created_at')
-    serializer_class = StorySerializer
-    permission_classes = [IsAuthenticatedOrReadOnly]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def perform_create(self, serializer):
-        serializer.save(author=self.request.user)
-
-class FollowViewSet(viewsets.ModelViewSet):
-    queryset = Follow.objects.all().order_by('-created_at')
-    serializer_class = FollowSerializer
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def create(self, request, *args, **kwargs):
-        follower = request.user
-        following_id = request.data.get('following')
-        if not following_id:
-            return Response({'error': 'Following user ID is required'}, status=status.HTTP_400_BAD_REQUEST)
-        if int(following_id) == follower.id:
-            return Response({'error': 'Cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
-        if Follow.objects.filter(follower=follower, following_id=following_id).exists():
-            return Response({'error': 'Already following this user'}, status=status.HTTP_400_BAD_REQUEST)
-        follow = Follow.objects.create(follower=follower, following_id=following_id)
-        serializer = self.get_serializer(follow)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    def destroy(self, request, *args, **kwargs):
-        follower = request.user
-        follow_id = kwargs.get('pk')
-        try:
-            follow = Follow.objects.get(id=follow_id, follower=follower)
-            follow.delete()
-            return Response(status=status.HTTP_204_NO_CONTENT)
-        except Follow.DoesNotExist:
-            return Response({'error': 'Follow relationship not found'}, status=status.HTTP_404_NOT_FOUND)
-
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
-    def follow(self, request):
-        follower = request.user
-        following_id = request.data.get('user_id')
-        if not following_id:
-            return Response({'error': 'User ID to follow is required'}, status=status.HTTP_400_BAD_REQUEST)
-        if int(following_id) == follower.id:
-            return Response({'error': 'Cannot follow yourself'}, status=status.HTTP_400_BAD_REQUEST)
-        if Follow.objects.filter(follower=follower, following_id=following_id).exists():
-            return Response({'error': 'Already following this user'}, status=status.HTTP_400_BAD_REQUEST)
-        follow = Follow.objects.create(follower=follower, following_id=following_id)
-        serializer = self.get_serializer(follow)
-        return Response(serializer.data, status=status.HTTP_201_CREATED)
-
-    @action(detail=False, methods=['post'], permission_classes=[IsAuthenticated])
-    def unfollow(self, request):
-        follower = request.user
-        following_id = request.data.get('user_id')
-        if not following_id:
-            return Response({'error': 'User ID to unfollow is required'}, status=status.HTTP_400_BAD_REQUEST)
-        try:
-            follow = Follow.objects.get(follower=follower, following_id=following_id)
-            follow.delete()
-            return Response({'status': 'unfollowed'}, status=status.HTTP_204_NO_CONTENT)
-        except Follow.DoesNotExist:
-            return Response({'error': 'Follow relationship not found'}, status=status.HTTP_404_NOT_FOUND)
-
-class NotificationViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = NotificationSerializer
-    permission_classes = [IsAuthenticated]
-    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
-
-    def get_queryset(self):
-        user = self.request.user
-        return Notification.objects.filter(recipient=user).order_by('-created_at')
-
 class SearchView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -219,6 +88,17 @@ class SearchView(APIView):
             })
 
         return Response(results, status=status.HTTP_200_OK)
+
+class DeleteTestUserView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def delete(self, request):
+        try:
+            user = User.objects.get(username='testuser')
+            user.delete()
+            return Response({'message': 'Test user deleted successfully'}, status=status.HTTP_200_OK)
+        except User.DoesNotExist:
+            return Response({'message': 'Test user does not exist'}, status=status.HTTP_404_NOT_FOUND)
 
 class RegisterSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True)
@@ -261,6 +141,14 @@ class RegisterView(APIView):
         # Return detailed errors for debugging
         return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
 
+    def put(self, request):
+        # Support for multipart/form-data for profile picture upload
+        serializer = RegisterSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response({'message': 'User registered successfully'}, status=status.HTTP_201_CREATED)
+        return Response({'errors': serializer.errors}, status=status.HTTP_400_BAD_REQUEST)
+
 class LoginView(APIView):
     permission_classes = [permissions.AllowAny]
 
@@ -284,3 +172,50 @@ class LoginView(APIView):
             token, created = Token.objects.get_or_create(user=user)
             return Response({'token': token.key}, status=status.HTTP_200_OK)
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+
+class StoryViewSet(viewsets.ModelViewSet):
+    queryset = Story.objects.all().order_by('-created_at')
+    serializer_class = StorySerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        story = serializer.save(author=user)
+        # Additional logic for story creation can be added here
+
+class FollowViewSet(viewsets.ModelViewSet):
+    queryset = Follow.objects.all().order_by('-created_at')
+    serializer_class = FollowSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        follow = serializer.save(follower=user)
+        # Additional logic for follow creation can be added here
+
+class NotificationViewSet(viewsets.ModelViewSet):
+    queryset = Notification.objects.all().order_by('-created_at')
+    serializer_class = NotificationSerializer
+    permission_classes = [IsAuthenticatedOrReadOnly]
+    authentication_classes = [TokenAuthentication, CsrfExemptSessionAuthentication]
+
+    def perform_create(self, serializer):
+        user = self.request.user
+        notification = serializer.save()
+        # Additional logic for notification creation can be added here
+
+class ChatConversationsView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request):
+        # Placeholder implementation for chat conversations list
+        return Response({"message": "List of chat conversations"}, status=200)
+
+class ChatMessagesView(APIView):
+    permission_classes = [IsAuthenticatedOrReadOnly]
+
+    def get(self, request, participant_id):
+        # Placeholder implementation for chat messages with a participant
+        return Response({"message": f"Messages with participant {participant_id}"}, status=200)

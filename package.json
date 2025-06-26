@@ -3,7 +3,17 @@
     "mitt": "^3.0.1"
   },
   "devDependencies": {
+    "@cypress/vite-dev-server": "^6.0.3",
+    "@cypress/webpack-preprocessor": "^6.0.4",
+    "@vitejs/plugin-vue": "^6.0.0",
+    "@vue/compiler-sfc": "^3.5.17",
+    "@vue/test-utils": "^2.4.6",
+    "babel-loader": "^10.0.0",
+    "css-loader": "^7.1.2",
     "cypress": "^14.5.0",
-    "cypress-file-upload": "^5.0.8"
+    "cypress-file-upload": "^5.0.8",
+    "style-loader": "^4.0.0",
+    "vitest": "^3.2.4",
+    "vue-loader": "^15.11.1"
   }
 }
