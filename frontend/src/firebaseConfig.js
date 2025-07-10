@@ -1,12 +1,12 @@
 import { initializeApp } from "firebase/app";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyCEtQNM70XnhlSrWgdR830UF--AjQewnKg",
+  authDomain: "media-platform-e02fa.firebaseapp.com",
+  projectId: "media-platform-e02fa",
+  storageBucket: "media-platform-e02fa.appspot.com",
+  messagingSenderId: "66321336393",
+  appId: "1:66321336393:web:YOUR_APP_ID_HERE"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);

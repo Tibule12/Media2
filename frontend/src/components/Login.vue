@@ -17,7 +17,8 @@ ord<template>
 </template>
 
 <script>
-import axios from 'axios'
+import firebaseApp from '../firebaseConfig'
+import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
 import { mapActions } from 'vuex'
 
 export default {
@@ -48,8 +49,14 @@ export default {
     ...mapActions(['login']),
     async loginUser() {
       this.error = null
+      const auth = getAuth(firebaseApp)
       try {
-        await this.login({ email: this.email.trim(), password: this.password })
+        // Sign in with Firebase client SDK
+        const userCredential = await signInWithEmailAndPassword(auth, this.email.trim(), this.password)
+        const idToken = await userCredential.user.getIdToken()
+
+        // Call Vuex login action with idToken
+        await this.login({ idToken })
         this.$router.push('/')
       } catch (err) {
         if (err.response && err.response.data) {
@@ -58,6 +65,9 @@ export default {
           this.error = Object.entries(errors).map(function([field, msgs]) {
             return field + ": " + (Array.isArray(msgs) ? msgs.join(", ") : msgs);
           }).join("; ")
+        } else if (err.code) {
+          // Firebase auth error
+          this.error = err.message || 'Authentication failed. Please try again.'
         } else {
           this.error = 'Login failed. Please try again.'
         }

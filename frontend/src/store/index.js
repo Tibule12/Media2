@@ -31,13 +31,19 @@ const store = createStore({
   actions: {
     async login({ commit }, credentials) {
       try {
-        const response = await axiosInstance.post('/api/auth/login/', credentials)
-        const token = response.data.token
+        // credentials contains idToken from Firebase client SDK
+        const response = await axiosInstance.post('/api/auth/login/', { idToken: credentials.idToken })
+        const uid = response.data.uid
+        const token = response.data.token || credentials.idToken // fallback to idToken if no token returned
         localStorage.setItem('token', token)
         commit('setToken', token)
-        // Optionally fetch user info here
-        commit('setUser', response.data.user || null)
-        axiosInstance.defaults.headers.common['Authorization'] = `Token ${token}`
+        // Store user info from response
+        commit('setUser', {
+          uid: uid,
+          email: response.data.email,
+          displayName: response.data.displayName
+        })
+        axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`
         return true
       } catch (error) {
         commit('clearAuth')
