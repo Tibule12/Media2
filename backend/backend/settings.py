@@ -63,7 +63,8 @@ FIREBASE_SERVICE_ACCOUNT = os.path.join(BASE_DIR, 'firebase-service-account.json
 # Database
 DATABASES = {
     'default': {
-        'ENGINE': 'django.db.backends.dummy',  # Dummy engine since Firebase is used
+        'ENGINE': 'django.db.backends.sqlite3',
+        'NAME': BASE_DIR / 'db.sqlite3',
     }
 }
 

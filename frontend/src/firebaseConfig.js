@@ -6,7 +6,7 @@ const firebaseConfig = {
   projectId: "media-platform-e02fa",
   storageBucket: "media-platform-e02fa.appspot.com",
   messagingSenderId: "66321336393",
-  appId: "1:66321336393:web:YOUR_APP_ID_HERE"
+  appId: "1:66321336393:web:REPLACE_WITH_ACTUAL_APP_ID"
 };
 
 const firebaseApp = initializeApp(firebaseConfig);
