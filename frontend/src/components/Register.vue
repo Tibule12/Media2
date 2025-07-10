@@ -30,6 +30,8 @@ export default {
       password: '',
       first_name: '',
       last_name: '',
+      fullName: '',
+      profilePicture: null,
       error: null,
     }
   },
@@ -51,38 +53,6 @@ export default {
   },
   methods: {
     ...mapActions(['login']),
-    async registerUser() {
-      this.error = null
-      try {
-        await axios.post('/api/auth/register/', {
-          username: this.username,
-          first_name: this.first_name,
-          last_name: this.last_name,
-          email: this.email,
-          password: this.password,
-        })
-        // After registration, redirect to login page
-        this.$router.push('/login')
-      } catch (err) {
-        if (err.response && err.response.data) {
-          console.log('Registration error response:', err.response.data);
-          // Format and display detailed validation errors
-          const errors = err.response.data
-          this.error = Object.entries(errors).map(function([field, msgs]) {
-            return field + ": " + (Array.isArray(msgs) ? msgs.join(", ") : msgs);
-          }).join("; ")
-        } else {
-          this.error = 'Registration failed. Please try again.'
-        }
-      }
-    },
-    goToLogin() {
-      this.$router.push('/login')
-    },
-    onFileChange(event) {
-      const file = event.target.files[0]
-      this.profilePicture = file
-    },
     async registerUser() {
       this.error = null
       try {
@@ -115,6 +85,13 @@ export default {
           this.error = 'Registration failed. Please try again.'
         }
       }
+    },
+    goToLogin() {
+      this.$router.push('/login')
+    },
+    onFileChange(event) {
+      const file = event.target.files[0]
+      this.profilePicture = file
     }
   },
 }
