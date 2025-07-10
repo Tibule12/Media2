@@ -81,6 +81,7 @@
 
 <script>
 import axiosInstance from '../axiosConfig'
+import supabase from '../supabaseConfig'
 
 export default {
   data() {
@@ -103,35 +104,32 @@ export default {
       errorProfile: null,
       errorContent: null,
       defaultProfileImage: '/default-profile.png',
+      newProfilePicture: null,
+      uploadMessage: '',
+      uploadSuccess: false,
     }
   },
   async created() {
     await this.fetchUserProfile()
     await this.fetchUserContent()
   },
-  data() {
-    return {
-      newProfilePicture: null,
-      uploadMessage: '',
-      uploadSuccess: false,
-    }
-  },
   methods: {
     async fetchUserProfile() {
       this.loadingProfile = true
       this.errorProfile = null
       try {
-        const response = await axiosInstance.get('/api/users/me/')
-        const profile = response.data.profile || {}
-        this.fullName = profile.fullName || response.data.first_name + ' ' + response.data.last_name
-        this.profilePicture = profile.profilePicture || ''
-        this.coverPhoto = profile.coverPhoto || ''
-        this.bio = profile.bio || ''
-        this.photosCount = response.data.photos_count || 0
-        this.followersCount = response.data.followers_count || 0
-        this.followsCount = response.data.follows_count || 0
-        this.isFollowing = response.data.is_following || false
-        this.storyHighlights = response.data.story_highlights || []
+        // Fetch profile from Supabase
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('*')
+          .eq('id', supabase.auth.user()?.id)
+          .single()
+        if (error) throw error
+        this.fullName = data.full_name || ''
+        this.profilePicture = data.profile_picture_url || ''
+        this.coverPhoto = data.cover_photo_url || ''
+        this.bio = data.bio || ''
+        // Other profile fields as needed
       } catch (error) {
         this.errorProfile = 'Failed to fetch user profile.'
         console.error('Failed to fetch user profile:', error)
@@ -143,11 +141,10 @@ export default {
       this.loadingContent = true
       this.errorContent = null
       try {
-        // Fetch posts
+        // Fetch posts from backend as before
         const postsResponse = await axiosInstance.get('/api/posts/?author=' + this.$route.params.username)
         this.photos = postsResponse.data.filter(post => post.media.length > 0 && post.media[0].media_type === 'image').map(post => post.media[0])
         this.videos = postsResponse.data.filter(post => post.media.length > 0 && post.media[0].media_type === 'video').map(post => post.media[0])
-        // Fetch tagged content - placeholder, implement as needed
         this.tagged = []
       } catch (error) {
         this.errorContent = 'Failed to fetch user content.'
@@ -177,15 +174,29 @@ export default {
         this.uploadSuccess = false
         return
       }
-      const formData = new FormData()
-      formData.append('profilePicture', this.newProfilePicture)
       try {
-        const response = await axiosInstance.put('/api/users/me/', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
-        this.profilePicture = response.data.profile.profilePicture
+        // Upload image to Supabase storage
+        const fileExt = this.newProfilePicture.name.split('.').pop()
+        const fileName = `${supabase.auth.user()?.id}/profile_picture.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+          .from('profile-pictures')
+          .upload(fileName, this.newProfilePicture, { upsert: true })
+        if (uploadError) throw uploadError
+
+        // Get public URL
+        const { publicURL, error: urlError } = supabase.storage
+          .from('profile-pictures')
+          .getPublicUrl(fileName)
+        if (urlError) throw urlError
+
+        // Update profile in Supabase
+        const { error: updateError } = await supabase
+          .from('profiles')
+          .update({ profile_picture_url: publicURL })
+          .eq('id', supabase.auth.user()?.id)
+        if (updateError) throw updateError
+
+        this.profilePicture = publicURL
         this.uploadMessage = 'Profile picture updated successfully.'
         this.uploadSuccess = true
         this.newProfilePicture = null

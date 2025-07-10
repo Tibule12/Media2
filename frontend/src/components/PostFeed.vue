@@ -43,7 +43,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import axiosInstance from '../axiosConfig'
 
 export default {
   data() {
@@ -99,7 +99,7 @@ export default {
         const params = {}
         if (this.sortOrder) params.sort = this.sortOrder
         if (this.authorFilter) params.author = this.authorFilter
-        const response = await axios.get('/api/posts/', { params })
+        const response = await axiosInstance.get('/api/posts/', { params })
         console.log('Fetched posts:', response.data)
         if (Array.isArray(response.data)) {
           this.posts = response.data
@@ -112,6 +112,16 @@ export default {
         console.error('Failed to load posts', error)
       } finally {
         this.loading = false
+      }
+    },
+    async createPost(postData) {
+      try {
+        console.log('Creating post with data:', postData)
+        const response = await axiosInstance.post('/api/posts/', postData)
+        console.log('Post created:', response.data)
+        this.$root.emitter.emit('postCreated')
+      } catch (error) {
+        console.error('Failed to create post', error)
       }
     }
   }

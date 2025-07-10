@@ -1,29 +1,20 @@
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
-from rest_framework.permissions import AllowAny
-from firebase_admin import auth
+from rest_framework.permissions import IsAuthenticated
+from . import firebase_client  # Ensure Firebase Admin SDK is initialized
 from rest_framework.views import exception_handler
 
 @api_view(['GET'])
-@permission_classes([AllowAny])
+@permission_classes([IsAuthenticated])
 def get_user_profile(request):
     try:
-        id_token = request.headers.get('Authorization')
-        if not id_token:
-            return Response({'error': 'Authorization header missing'}, status=status.HTTP_401_UNAUTHORIZED)
-        # Remove 'Bearer ' prefix if present
-        if id_token.startswith('Bearer '):
-            id_token = id_token[7:]
-        decoded_token = auth.verify_id_token(id_token)
-        uid = decoded_token.get('uid')
-        if not uid:
-            return Response({'error': 'Invalid token'}, status=status.HTTP_401_UNAUTHORIZED)
-        user = auth.get_user(uid)
+        user = request.user
         user_data = {
-            'uid': user.uid,
-            'email': user.email,
-            'display_name': user.display_name,
+            'uid': user.username,
+            'email': getattr(user, 'email', ''),
+            'display_name': getattr(user, 'display_name', ''),
+            # Add any additional registration details here if stored in backend database
         }
         return Response(user_data)
     except Exception as e:

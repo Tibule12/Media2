@@ -19,8 +19,7 @@
 </template>
 
 <script>
-import axios from 'axios'
-import { mapActions } from 'vuex'
+import supabase from '../supabaseConfig'
 
 export default {
   data() {
@@ -52,31 +51,59 @@ export default {
     }
   },
   methods: {
-    ...mapActions(['login']),
     async registerUser() {
       this.error = null
       try {
-        const formData = new FormData()
-        formData.append('username', this.username)
-        formData.append('email', this.email)
-        formData.append('password', this.password)
-        formData.append('first_name', this.first_name)
-        formData.append('last_name', this.last_name)
-        formData.append('fullName', this.fullName)
-        if (this.profilePicture) {
-          formData.append('profilePicture', this.profilePicture)
-        }
-        await axios.post('/api/auth/register/', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data'
-          }
+        // Register user with Supabase auth
+        const { data: { user }, error: signUpError } = await supabase.auth.signUp({
+          email: this.email,
+          password: this.password,
         })
+        if (signUpError) throw signUpError
+
+        // Insert additional profile data into Supabase profiles table
+        let profile_picture_url = '';
+        if (this.profilePicture) {
+          const fileExt = this.profilePicture.name.split('.').pop()
+          const fileName = `${user.id}/profile_picture.${fileExt}`
+          const { error: uploadError } = await supabase.storage
+            .from('images')
+            .upload(fileName, this.profilePicture)
+          if (uploadError) throw uploadError
+
+          const { publicURL, error: urlError } = supabase.storage
+            .from('images')
+            .getPublicUrl(fileName)
+          if (urlError) throw urlError
+
+          profile_picture_url = publicURL
+        }
+
+        const { error: profileError } = await supabase
+          .from('profiles')
+          .insert([
+            {
+              id: user.id,
+              username: this.username,
+              first_name: this.first_name,
+              last_name: this.last_name,
+              full_name: this.fullName,
+              bio: '',
+              profile_picture_url: profile_picture_url,
+              cover_photo_url: '',
+              followers_count: 0,
+              following_count: 0,
+            }
+          ])
+        if (profileError) throw profileError
+
         // After registration, redirect to login page
         this.$router.push('/login')
       } catch (err) {
-        if (err.response && err.response.data) {
+        if (err.message) {
+          this.error = err.message
+        } else if (err.response && err.response.data) {
           console.log('Registration error response:', err.response.data);
-          // Format and display detailed validation errors
           const errors = err.response.data
           this.error = Object.entries(errors).map(function([field, msgs]) {
             return field + ": " + (Array.isArray(msgs) ? msgs.join(", ") : msgs);

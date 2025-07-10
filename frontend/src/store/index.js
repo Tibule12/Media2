@@ -1,4 +1,5 @@
 import { createStore } from 'vuex'
+import supabase from '../supabaseConfig'
 import axiosInstance from '../axiosConfig'
 
 const store = createStore({
@@ -31,17 +32,20 @@ const store = createStore({
   actions: {
     async login({ commit }, credentials) {
       try {
-        // credentials contains idToken from Firebase client SDK
-        const response = await axiosInstance.post('/api/auth/login/', { idToken: credentials.idToken })
-        const uid = response.data.uid
-        const token = response.data.token || credentials.idToken // fallback to idToken if no token returned
+        // Use Supabase signInWithPassword with email and password from credentials
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: credentials.email,
+          password: credentials.password
+        })
+        if (error) throw error
+        const token = data.session.access_token
         localStorage.setItem('token', token)
         commit('setToken', token)
-        // Store user info from response
+        // Store user info from Supabase user object
         commit('setUser', {
-          uid: uid,
-          email: response.data.email,
-          displayName: response.data.displayName
+          uid: data.user.id,
+          email: data.user.email,
+          displayName: data.user.user_metadata?.full_name || ''
         })
         axiosInstance.defaults.headers.common['Authorization'] = `Bearer ${token}`
         return true
@@ -55,6 +59,7 @@ const store = createStore({
       commit('clearAuth')
       localStorage.removeItem('token')
       delete axiosInstance.defaults.headers.common['Authorization']
+      supabase.auth.signOut()
     }
   }
 })

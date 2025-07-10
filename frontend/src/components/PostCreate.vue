@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import axios from 'axios'
+import axiosInstance from '../axiosConfig'
 
 export default {
   data() {
@@ -34,11 +34,9 @@ export default {
         this.files.forEach((file, index) => {
           formData.append(`media_${index}`, file)
         })
-        const token = localStorage.getItem('authToken')
-        const response = await axios.post('/api/posts/', formData, {
+        const response = await axiosInstance.post('/api/posts/', formData, {
           headers: {
             'Content-Type': 'multipart/form-data',
-            'Authorization': `Token ${token}`,
           },
         })
         console.log('Post created:', response.data)

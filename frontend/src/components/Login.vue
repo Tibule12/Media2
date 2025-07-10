@@ -17,8 +17,7 @@ ord<template>
 </template>
 
 <script>
-import firebaseApp from '../firebaseConfig'
-import { getAuth, signInWithEmailAndPassword } from 'firebase/auth'
+import supabase from '../supabaseConfig'
 import { mapActions } from 'vuex'
 
 export default {
@@ -49,11 +48,15 @@ export default {
     ...mapActions(['login']),
     async loginUser() {
       this.error = null
-      const auth = getAuth(firebaseApp)
       try {
-        // Sign in with Firebase client SDK
-        const userCredential = await signInWithEmailAndPassword(auth, this.email.trim(), this.password)
-        const idToken = await userCredential.user.getIdToken()
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: this.email.trim(),
+          password: this.password,
+        })
+        if (error) throw error
+
+        const idToken = data.session?.access_token
+        if (!idToken) throw new Error('No access token received')
 
         // Call Vuex login action with idToken
         await this.login({ idToken })
@@ -65,8 +68,7 @@ export default {
           this.error = Object.entries(errors).map(function([field, msgs]) {
             return field + ": " + (Array.isArray(msgs) ? msgs.join(", ") : msgs);
           }).join("; ")
-        } else if (err.code) {
-          // Firebase auth error
+        } else if (err.message) {
           this.error = err.message || 'Authentication failed. Please try again.'
         } else {
           this.error = 'Login failed. Please try again.'

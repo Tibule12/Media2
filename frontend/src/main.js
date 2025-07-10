@@ -5,6 +5,7 @@ import store from './store'
 import mitt from 'mitt'
 import './assets/styles.css'
 import './axiosConfig'  // Import axios config to set baseURL
+import './tokenRefresh'  // Import token refresh logic
 
 const emitter = mitt()
 

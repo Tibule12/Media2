@@ -22,8 +22,8 @@
 </template>
 
 <script>
-import axiosInstance from '../axiosConfig'
 import Stories from './Stories.vue'
+import supabase from '../supabaseConfig'
 
 export default {
   components: {
@@ -56,22 +56,39 @@ export default {
         return
       }
       try {
-        const formData = new FormData()
-        formData.append('media', this.mediaFile)
-        // Set expires_at to 24 hours from now
-        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
-        formData.append('expires_at', expiresAt)
+        // Upload media to Supabase storage
+        const fileExt = this.mediaFile.name.split('.').pop()
+        const fileName = `${supabase.auth.user()?.id}/stories/${Date.now()}.${fileExt}`
+        const { error: uploadError } = await supabase.storage
+          .from('stories')
+          .upload(fileName, this.mediaFile)
+        if (uploadError) throw uploadError
 
-        await axiosInstance.post('/api/stories/', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-          },
-        })
+        // Get public URL
+        const { publicURL, error: urlError } = supabase.storage
+          .from('stories')
+          .getPublicUrl(fileName)
+        if (urlError) throw urlError
+
+        // Insert story metadata into Supabase database
+        const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+        const { error: insertError } = await supabase
+          .from('stories')
+          .insert([
+            {
+              user_id: supabase.auth.user()?.id,
+              media_url: publicURL,
+              expires_at: expiresAt,
+            }
+          ])
+        if (insertError) throw insertError
+
         this.message = 'Story posted successfully.'
         this.mediaFile = null
         this.mediaPreview = null
       } catch (err) {
         this.error = 'Failed to post story. Please try again.'
+        console.error('Story post error:', err)
       }
     },
   },
